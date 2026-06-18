@@ -20,50 +20,30 @@ export async function onRequestPost(context) {
     return json({ error: 'Stripe not configured' }, 500);
   }
 
-  const lineItem = type === 'subscription'
-    ? {
-        price_data: {
-          currency: 'usd',
-          product: productId,
-          unit_amount: price,
-          recurring: { interval: 'month', interval_count: 1 },
-        },
-        quantity: 1,
-      }
-    : {
-        price_data: {
-          currency: 'usd',
-          product: productId,
-          unit_amount: price,
-        },
-        quantity: 1,
-      };
+  const isSubscription = type === 'subscription';
+  const params = new URLSearchParams();
 
-  const params = new URLSearchParams({
-    mode:                          type === 'subscription' ? 'subscription' : 'payment',
-    'line_items[0][price_data][currency]':    lineItem.price_data.currency,
-    'line_items[0][price_data][product]':     lineItem.price_data.product,
-    'line_items[0][price_data][unit_amount]': String(lineItem.price_data.unit_amount),
-    'line_items[0][quantity]':                '1',
-    success_url: `${origin}/thank-you.html?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:  `${origin}/`,
-    'customer_email': '',
-    'metadata[product_name]': name,
-    'metadata[product_id]':   productId,
-    'metadata[type]':         type,
-  });
+  params.set('mode', isSubscription ? 'subscription' : 'payment');
+  params.set('line_items[0][price_data][currency]', 'usd');
+  params.set('line_items[0][price_data][product]', productId);
+  params.set('line_items[0][price_data][unit_amount]', String(price));
+  params.set('line_items[0][quantity]', '1');
 
-  if (type === 'subscription') {
+  if (isSubscription) {
     params.set('line_items[0][price_data][recurring][interval]', 'month');
     params.set('line_items[0][price_data][recurring][interval_count]', '1');
     if (planCount) params.set('metadata[plan_count]', String(planCount));
+  } else {
+    // customer_creation only valid in payment mode
+    params.set('customer_creation', 'always');
+    params.set('allow_promotion_codes', 'true');
   }
 
-  // allow promo codes
-  params.set('allow_promotion_codes', 'true');
-
-  // collect email for enrollment webhook
-  params.set('customer_creation', 'always');
+  params.set('success_url', `${origin}/thank-you.html?session_id={CHECKOUT_SESSION_ID}`);
+  params.set('cancel_url', `${origin}/`);
+  params.set('metadata[product_name]', name);
+  params.set('metadata[product_id]', productId);
+  params.set('metadata[type]', type);
 
   const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -77,7 +57,7 @@ export async function onRequestPost(context) {
   const session = await stripeRes.json();
 
   if (!stripeRes.ok) {
-    console.error('Stripe error:', session);
+    console.error('Stripe error:', JSON.stringify(session));
     return json({ error: session.error?.message || 'Stripe error' }, 500);
   }
 
