@@ -233,7 +233,7 @@ body {
 .card-thumb {
   position: relative;
   width: 100%;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1/1;
   background: var(--purple-mid);
   overflow: hidden;
 }
