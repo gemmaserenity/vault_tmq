@@ -150,6 +150,9 @@ body {
   color: var(--purple-deep);
 }
 
+/* offset anchor scroll so sticky nav doesn't cover the target */
+[id] { scroll-margin-top: 80px; }
+
 /* ---- TIER SECTIONS ---- */
 .tier-section {
   max-width: 1200px;
