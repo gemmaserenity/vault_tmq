@@ -146,10 +146,9 @@ async function supabasePatch(env, path, data) {
 
 function supabaseHeaders(env) {
   return {
-    apikey:        env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
     'Content-Type': 'application/json',
-    Prefer:        'return=minimal,resolution=merge-duplicates',
+    Prefer: 'return=minimal,resolution=merge-duplicates',
   };
 }
 
